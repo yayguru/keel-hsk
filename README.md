@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/keel-logo.png" width="160" alt="Keel logo"></p>
+
 # Keel
 
 **Demo video (2:16, recorded live on HSK mainnet):** https://youtu.be/Y8ZGB-Qex4M
