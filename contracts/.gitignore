@@ -1,0 +1,18 @@
+# Compiler files
+cache/
+out/
+
+# Commonly ignored directories
+.logs/
+.ignore/
+
+# Broadcast receipts can sit next to local keys. Keep them out of git.
+/broadcast
+
+# Docs
+docs/
+
+# Dotenv file
+.env
+.env.*
+!.env.example

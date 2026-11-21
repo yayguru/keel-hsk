@@ -1,0 +1,33 @@
+{
+  "chainId": 133,
+  "verified": {
+    "name": "KeelVault",
+    "address": "0x8414702dD9bd6C0938Be758E96cF1C6Ec7bF32B5",
+    "explorer": "https://testnet-explorer.hskchain.net/address/0x8414702dD9bd6C0938Be758E96cF1C6Ec7bF32B5",
+    "isVerified": true,
+    "isPartiallyVerified": false,
+    "compiler": "v0.8.26+commit.8a97fa7a",
+    "sourcify": "exact_match",
+    "sourcifyUrl": "https://sourcify.dev/server/v2/contract/133/0x8414702dD9bd6C0938Be758E96cF1C6Ec7bF32B5",
+    "deployTx": "0x9370b5a0f293cba0cd6157120d5a9b997a8cbd008dddfac9112520aa9d725f48",
+    "deployTxUrl": "https://testnet-explorer.hskchain.net/tx/0x9370b5a0f293cba0cd6157120d5a9b997a8cbd008dddfac9112520aa9d725f48",
+    "owner": "0x54DE9EfF520b7025086D59c089Cd192F7a6372e4",
+    "agent": "0x2932524A7679164472856428312097bdc02d734a",
+    "wrapTx": "0x9fa1e988559487126332e85c2e02e033aa9cfca1602d724f19daa17fef522e3c",
+    "swapTx": "0x5594f3666fb5c9ee98a7e1c5a58dedb110d0f94dc2a6cab9603e0cd84162a419",
+    "swapTxUrl": "https://testnet-explorer.hskchain.net/tx/0x5594f3666fb5c9ee98a7e1c5a58dedb110d0f94dc2a6cab9603e0cd84162a419",
+    "note": "Current source. Verified on the testnet explorer as a full match, and an exact match on Sourcify. One Decision sell of 0.001 WHSK."
+  },
+  "previous": {
+    "address": "0x8C4c3769BC08425730d95A84F4709bbf34e44EC9",
+    "explorer": "https://testnet-explorer.hskchain.net/address/0x8C4c3769BC08425730d95A84F4709bbf34e44EC9",
+    "sourcify": "exact_match",
+    "sourcifyUrl": "https://sourcify.dev/server/v2/contract/133/0x8C4c3769BC08425730d95A84F4709bbf34e44EC9",
+    "deployTxUrl": "https://testnet-explorer.hskchain.net/tx/0xe009c0bf8ab5062e00790b4965b146a52705e81daafd7a5d7b05e7b137dc5a11",
+    "swaps": [
+      "https://testnet-explorer.hskchain.net/tx/0x0443ae7602181d967e9255ee4e104576363eac9155aca60d0241d661c5fc8252",
+      "https://testnet-explorer.hskchain.net/tx/0x2a2d8effb911edb85b5f475bd352fa02269fe3159bdaf06efec96296c7acd035"
+    ],
+    "note": "First deploy. It imported OpenZeppelin, so the standard JSON was 114KB and the explorer gateway returned HTTP 413 above about 100KB. Sourcify accepted it as an exact match. The explorer does not list Sourcify as a verification method, so that address stays unverified there. Superseded by the verified vault."
+  }
+}
