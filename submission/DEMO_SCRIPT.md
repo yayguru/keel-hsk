@@ -16,8 +16,8 @@ Open the desk. The header badges should read Paper, Chain 177, and Open.
 4. **Limit, 20s.** Type `max trade 50` in the message box and press Send. Keel refuses. Type `max trade 1` and send. The book’s max trade becomes 1 USDT. Say: "The chat can tighten a limit. It cannot loosen one."
 5. **Live pool, 25s.** Type `reset` if a WHSK position is still open, so the live check is not an exit. Click `check the pool`. Read the price and the APRO line. On 20 Nov 2026 the pool was about 0.08276 and APRO about 0.08208, so with no position the rule holds. If it holds, say so. Do not force a trade.
 6. **Pause, 15s.** Type `pause`. The badge switches to Paused. Type `resume`. It switches back to Open.
-7. **Verified contract, 20s.** Open the testnet vault `0x8414702dD9bd6C0938Be758E96cF1C6Ec7bF32B5` on the testnet explorer. The page should show the source as verified. Open the Decision sell `0x5594f3666fb5c9ee98a7e1c5a58dedb110d0f94dc2a6cab9603e0cd84162a419` and point at the `Decision` event. Say: "The agent can call swap. Withdraw and pause stay with the owner."
-8. **Close, 10s.** Back to the desk. Say: "Paper mode is the default. Mainnet is a separate deploy, with the same verify script, and the caps stay at a few dollars."
+7. **Verified contract on mainnet, 25s.** Open `https://hsk.blockscout.com/address/0x8980296BAe193A359937ac873f8E6759C289646d`. The page shows KeelVault with verified source. Open the chat sell `0x3be3acda6b866ea83bb81c8cc533a45646af2fbaa737cbc704f9fd2667b9f702` and point at the `Decision` event and its reason text. Say: "This is HSK Chain mainnet. The agent can call swap. Withdraw and pause stay with the owner."
+8. **Close, 10s.** Back to the desk. Say: "Paper mode is the default. Mainnet mode sends the same proposal through this vault, and the caps stay at a few dollars."
 
 The buttons under the message box are `check the pool`, `worked example`, `status`, `risk`, and `max trade 1`. They send as soon as you click them. Approve and Reject only appear when a proposal is waiting.
 
@@ -29,4 +29,4 @@ The worked example uses a synthetic price, so the rule is visible when the live 
 
 The live check uses the HSK Chain RPC. If the rule says hold, that is what we show.
 
-On chain, the agent can only swap through the vault. The verified testnet vault is on the explorer. The vault builds the router call, checks the size, the slippage floor, the cooldown, and the daily realized loss, and writes a Decision event. The owner can pause and withdraw. The agent cannot.
+On chain, the agent can only swap through the vault. The verified mainnet vault is on the explorer. The vault builds the router call, checks the size, the slippage floor, the cooldown, and the daily realized loss, and writes a Decision event. The owner can pause and withdraw. The agent cannot.

@@ -2,7 +2,9 @@
 
 Keel is a Track A entry for the [HSK Chain Horizon Hackathon · Seoul](https://dorahacks.io/hackathon/hskchainseoul/detail). It is a WHSK/USDT agent for HSKSwap. The agent can read the pool and explain a trade. The only address that can swap is a vault, and the vault enforces the size, slippage, cooldown, inventory, and daily realized-loss limits.
 
-Submission closes 3 Dec 2026 04:00 UTC. This repo does not register the BUIDL and does not touch a mainnet wallet.
+Submission closes 3 Dec 2026 04:00 UTC.
+
+**Mainnet vault:** [`0x8980296BAe193A359937ac873f8E6759C289646d`](https://hsk.blockscout.com/address/0x8980296BAe193A359937ac873f8E6759C289646d) on HSK Chain (chain id 177). Source verified on Blockscout as a full match, and an exact match on [Sourcify](https://sourcify.dev/server/v2/contract/177/0x8980296BAe193A359937ac873f8E6759C289646d). Two guarded swaps went through it from the chat desk; see [On mainnet](#on-mainnet).
 
 ## How it works
 
@@ -10,7 +12,7 @@ The book starts in paper mode with 100 USDT and sends nothing. `check the pool` 
 
 If `LLM_API_KEY` is set, the model may only take, skip, or halve a non-stop entry, and it writes the note. With no key, the note is the rule. Nothing fills until you reply `approve`.
 
-On testnet, approve sends `KeelVault.swap`. The contract builds the `exactInputSingle` call itself. The agent key cannot withdraw, cannot pick another router, and cannot set a minimum below the spot floor.
+On testnet and mainnet, approve sends `KeelVault.swap`. The contract builds the `exactInputSingle` call itself. The agent key cannot withdraw, cannot pick another router, and cannot set a minimum below the spot floor.
 
 ```mermaid
 flowchart LR
@@ -21,7 +23,7 @@ flowchart LR
   llm --> proposal
   proposal --> approve{Approve}
   approve -->|paper| book[Paper book]
-  approve -->|testnet| vault[KeelVault]
+  approve -->|testnet or mainnet| vault[KeelVault]
   vault --> router[HSKSwap SwapRouter02]
   router --> pool[WHSK/USDT 0.30% pool]
   vault --> log[Decision event]
@@ -76,7 +78,7 @@ The desk is at [http://127.0.0.1:4317](http://127.0.0.1:4317).
 
 Paper commands: `check the pool`, `worked example`, `approve`, `reject`, `status`, `positions`, `risk`, `max trade 1`, `daily loss 3`, `slippage 0.5%`, `cooldown 120`, `pause`, `resume`, `buy 2`, `sell 0.01`, `reset`.
 
-`max trade` and the other limit commands only move the paper policy safer. Raising a cap is refused. On testnet, the same command is sent to `tighten` when `OWNER_PRIVATE_KEY` and `VAULT_ADDRESS` are set.
+`max trade` and the other limit commands only move the paper policy safer. Raising a cap is refused. On testnet or mainnet, the same command is sent to `tighten` when `OWNER_PRIVATE_KEY` and `VAULT_ADDRESS` are set.
 
 ## Contracts
 
@@ -104,7 +106,7 @@ set +a
 | Network | KeelVault | Status |
 | --- | --- | --- |
 | HSK testnet, chain 133 | [`0x8414702dD9bd6C0938Be758E96cF1C6Ec7bF32B5`](https://testnet-explorer.hskchain.net/address/0x8414702dD9bd6C0938Be758E96cF1C6Ec7bF32B5) | source verified, full match |
-| HSK mainnet, chain 177 | not deployed | same verify script, after you deploy |
+| HSK mainnet, chain 177 | [`0x8980296BAe193A359937ac873f8E6759C289646d`](https://hsk.blockscout.com/address/0x8980296BAe193A359937ac873f8E6759C289646d) | source verified, full match. Sourcify exact match |
 
 The verified testnet vault was deployed in [`0x9370b5a0…725f48`](https://testnet-explorer.hskchain.net/tx/0x9370b5a0f293cba0cd6157120d5a9b997a8cbd008dddfac9112520aa9d725f48). Owner `0x54DE9EfF520b7025086D59c089Cd192F7a6372e4`. Agent `0x2932524A7679164472856428312097bdc02d734a`. Sourcify reports an exact match: https://sourcify.dev/server/v2/contract/133/0x8414702dD9bd6C0938Be758E96cF1C6Ec7bF32B5
 
@@ -121,6 +123,29 @@ MODE=testnet VAULT_ADDRESS=0x... OWNER_PRIVATE_KEY=0x... AGENT_PRIVATE_KEY=0x...
 ```
 
 The script wraps 0.001 HSK into the vault and sells that WHSK through `swap`. It does not touch mainnet.
+
+## On mainnet
+
+Deployed 21 Nov 2026 with `contracts/deploy/mainnet.sh` and verified with `contracts/deploy/verify.sh`. The record is `contracts/deployments/177.json`.
+
+| Step | Transaction |
+| --- | --- |
+| Deploy KeelVault (2,067,747 gas) | [`0x386afa2d…a05f4`](https://hsk.blockscout.com/tx/0x386afa2dba142422438d44f847c61c74a926812e4e67c8df19688736a7ca05f4) |
+| Owner wraps 8 HSK into the vault | [`0x9fdbaa3e…06e95`](https://hsk.blockscout.com/tx/0x9fdbaa3e584344a31f1d2a92eb034a7c544f8d05dfa153ad16b6c609d9b06e95) |
+| Chat `sell 5`, `approve`: 5 WHSK for 0.404297 USDT | [`0x3be3acda…9f702`](https://hsk.blockscout.com/tx/0x3be3acda6b866ea83bb81c8cc533a45646af2fbaa737cbc704f9fd2667b9f702) |
+| Chat `buy 0.3`, `approve`: 0.3 USDT for 3.6879 WHSK | [`0x2d86b4e5…3d26b`](https://hsk.blockscout.com/tx/0x2d86b4e5a9f5e6090fc1a08827c33a965cf045208dab8b70ced2d84af3b3d26b) |
+
+Both swaps were sent by the agent key from the desk in `MODE=mainnet`, and each receipt has a `Decision` event with the reason. Owner `0x35D6cAbC30d0a1ee1B8d666DcC9944727a7145D2`. Agent `0x8745a069574F6cD367d9877F04715617A77B7a6d`.
+
+What the vault refused in the same session, with no transaction broadcast:
+
+- `sell 6`, `approve`: `Cap(6000000000000000000, 5000000000000000000)`. The per-trade cap is 5 WHSK.
+- `buy 0.3`, `approve` right after the sell: `Cooldown(readyAt)`. The cooldown is 60 seconds.
+- `max trade 3`: the desk refuses it, because 3 USDT is looser than the 2 USDT cap.
+
+A refusal shows up at gas estimation, so it costs nothing. The desk prints the vault error by name.
+
+HSK was about 0.081 USDT in the pool that day, so a 5 WHSK trade is about 0.40 USDT. A 2 USDT buy needs more USDT in the vault than these trades produced. The sizes are tiny on purpose.
 
 ## Deploy the desk
 

@@ -1,4 +1,4 @@
-import { createPublicClient, createWalletClient, decodeEventLog, http, keccak256, parseAbi, stringToHex, toBytes } from "viem";
+import { BaseError, ContractFunctionRevertedError, createPublicClient, createWalletClient, decodeEventLog, http, keccak256, parseAbi, stringToHex, toBytes } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import type { ChainConfig } from "./chains";
 import type { Proposal } from "./desk";
@@ -10,8 +10,35 @@ const vaultAbi = parseAbi([
   "function setPaused(bool next)",
   "function tighten((bool hasMax0, uint256 maxAmountIn0, bool hasMax1, uint256 maxAmountIn1, bool hasSlippage, uint16 slippageBps, bool hasCooldown, uint32 cooldown, bool hasDaily, uint256 dailyLossLimit, bool hasMaxBase, uint256 maxBase) patch)",
   "function token0() view returns (address)",
+  "error NotOwner()",
+  "error NotAgent()",
+  "error PausedError()",
+  "error BadToken()",
+  "error NotTighter()",
+  "error ZeroAmount()",
+  "error Replay()",
+  "error ReasonTooLong()",
+  "error Cap(uint256 amount, uint256 maxAmount)",
+  "error Slippage(uint256 amountOutMin, uint256 floorMin)",
+  "error DailyLoss(uint256 realized, uint256 limit)",
+  "error Cooldown(uint256 readyAt)",
+  "error Inventory(uint256 nextBase, uint256 maxBase)",
+  "error Deadline(uint256 deadline, uint256 nowTs)",
   "event Decision(bytes32 indexed decisionId, address indexed tokenIn, address tokenOut, uint256 amountIn, uint256 amountOutMin, uint256 amountOut, uint256 dayRealizedLoss, uint256 baseQty, uint256 quoteCost, bool stopOut, bytes reason)",
 ]);
+
+/** Names the vault rule that refused the call. Viem runs eth_estimateGas first, so a refusal costs no gas. */
+function explain(error: unknown, fallback: string): string {
+  if (error instanceof BaseError) {
+    const revert = error.walk((e) => e instanceof ContractFunctionRevertedError);
+    if (revert instanceof ContractFunctionRevertedError && revert.data?.errorName) {
+      const args = (revert.data.args ?? []).map((a) => String(a)).join(", ");
+      return `The vault refused it: ${revert.data.errorName}(${args}). Nothing was sent.`;
+    }
+    return error.shortMessage;
+  }
+  return error instanceof Error ? error.message : fallback;
+}
 
 function accountFrom(name: "AGENT_PRIVATE_KEY" | "OWNER_PRIVATE_KEY") {
   const key = process.env[name];
@@ -36,7 +63,7 @@ export function vaultAddress(): `0x${string}` | null {
 export async function executeProposal(config: ChainConfig, proposal: Proposal): Promise<{ txHash: `0x${string}`; amountOut: bigint } | { error: string }> {
   const vault = vaultAddress();
   const account = accountFrom("AGENT_PRIVATE_KEY");
-  if (!vault || !account) return { error: "Testnet execution needs VAULT_ADDRESS and AGENT_PRIVATE_KEY." };
+  if (!vault || !account) return { error: "On-chain execution needs VAULT_ADDRESS and AGENT_PRIVATE_KEY." };
   const tokenIn = proposal.side === "buy" ? config.quote : config.base;
   const spot = spotOut(proposal.amountIn, proposal.zeroForOne, proposal.sqrtPriceX96, proposal.fee);
   const amountOutMin = slippageFloor(spot, proposal.slippageBps);
@@ -66,7 +93,7 @@ export async function executeProposal(config: ChainConfig, proposal: Proposal): 
     }
     return { txHash: hash, amountOut };
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Swap failed." };
+    return { error: explain(error, "Swap failed.") };
   }
 }
 
@@ -115,7 +142,7 @@ export async function tightenVault(config: ChainConfig, before: Policy, after: P
     if (receipt.status !== "success") return { error: `Tighten reverted. Tx ${hash}.` };
     return { txHash: hash };
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Tighten failed." };
+    return { error: explain(error, "Tighten failed.") };
   }
 }
 
@@ -131,6 +158,6 @@ export async function pauseVault(config: ChainConfig, paused: boolean): Promise<
     if (receipt.status !== "success") return { error: `Pause reverted. Tx ${hash}.` };
     return { txHash: hash };
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Pause failed." };
+    return { error: explain(error, "Pause failed.") };
   }
 }

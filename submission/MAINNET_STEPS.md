@@ -1,6 +1,6 @@
 # Mainnet steps
 
-Do this yourself. The hackathon workspace must not create a mainnet key, buy HSK, or broadcast.
+Done on 21 Nov 2026. The mainnet vault is [`0x8980296BAe193A359937ac873f8E6759C289646d`](https://hsk.blockscout.com/address/0x8980296BAe193A359937ac873f8E6759C289646d), verified, with two Decision swaps. Every hash is in `contracts/deployments/177.json` and in the README. The steps below are how it was done, and how to repeat it with your own wallets.
 
 KeelVault has to be on HSK Chain mainnet, chain id 177, or the entry is out of demo selection. Testnet is for the rehearsal. These steps deploy the same contract with the caps in `contracts/deploy/mainnet.sh`: 5 WHSK per trade, 2 USDT per trade, 1% slippage, 60 second cooldown, 5 USDT daily realized loss, 50 WHSK inventory.
 
@@ -125,17 +125,17 @@ LLM_API_KEY=
 npm run dev
 ```
 
-In the chat: `buy 1`, then `approve`. One USDT is inside the 2 USDT cap. The vault computes the minimum from spot and reverts if the quote is worse than 1%. The transcript prints the transaction hash. Open it on `https://hsk.blockscout.com/tx/<hash>` and confirm a `Decision` event.
+In the chat: `sell 5`, then `approve`. That is how the vault got its first USDT on 21 Nov 2026, with no exchange: 5 WHSK came back as 0.404297 USDT. After the 60 second cooldown, `buy 0.3`, then `approve`. A buy of up to 2 USDT is inside the cap once the vault holds that much USDT. The vault computes the minimum from spot and reverts if the quote is worse than 1%. The transcript prints the transaction hash. Open it on `https://hsk.blockscout.com/tx/<hash>` and confirm a `Decision` event.
 
 `pause` and `max trade 1` in this mode are owner transactions. `max trade 3` is refused because 3 is looser than 2.
 
 ## 5. Paste into the BUIDL
 
 - Title, one-liner, description, track, and stack: `submission/BUIDL.md`
-- Mainnet vault address and `https://hsk.blockscout.com/address/<vault>`
-- The deploy transaction `https://hsk.blockscout.com/tx/<hash>`
-- If you swapped, the Decision transaction as well
-- Repository URL
+- Mainnet vault address: `0x8980296BAe193A359937ac873f8E6759C289646d`, https://hsk.blockscout.com/address/0x8980296BAe193A359937ac873f8E6759C289646d
+- The deploy transaction: https://hsk.blockscout.com/tx/0x386afa2dba142422438d44f847c61c74a926812e4e67c8df19688736a7ca05f4
+- The Decision swaps: https://hsk.blockscout.com/tx/0x3be3acda6b866ea83bb81c8cc533a45646af2fbaa737cbc704f9fd2667b9f702 and https://hsk.blockscout.com/tx/0x2d86b4e5a9f5e6090fc1a08827c33a965cf045208dab8b70ced2d84af3b3d26b
+- Repository URL: https://github.com/yayguru/keel-hsk
 - Demo video, using `submission/DEMO_SCRIPT.md`
 
 Kill switch, if you need it:

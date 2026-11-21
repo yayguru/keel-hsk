@@ -96,7 +96,7 @@ export function freshDesk(chain: ChainConfig, now: number, mode: DeskMode = "pap
     policy: paper
       ? {
           maxQuoteIn: 2_000_000n,
-          maxBaseIn: 25n * 10n ** 18n,
+          maxBaseIn: 5n * 10n ** 18n,
           slippageBps: 100,
           dailyLoss: 5_000_000n,
           cooldownSec: 60,
@@ -431,10 +431,11 @@ async function approve(desk: Desk, now: number, chain: ChainActions): Promise<vo
       reason: proposal.reason,
       txHash: result.txHash,
       at: now,
-      source: "testnet",
+      source: desk.mode,
     });
     desk.proposal = null;
-    say(desk, `Testnet swap sent. Tx ${result.txHash}. Output ${result.amountOut.toString()} raw units.`, now);
+    const outSide = proposal.side === "buy" ? "base" : "quote";
+    say(desk, `${desk.mode === "mainnet" ? "Mainnet" : "Testnet"} swap sent through the vault. Received ${money(desk, result.amountOut, outSide)}. ${desk.chain.explorer}/tx/${result.txHash}`, now);
     return;
   }
   const filled = applySwap(desk.book, desk.policy, {

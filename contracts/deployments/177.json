@@ -1,0 +1,53 @@
+{
+  "chainId": 177,
+  "name": "KeelVault",
+  "address": "0x8980296BAe193A359937ac873f8E6759C289646d",
+  "explorer": "https://hsk.blockscout.com/address/0x8980296BAe193A359937ac873f8E6759C289646d",
+  "isVerified": true,
+  "isPartiallyVerified": false,
+  "compiler": "v0.8.26+commit.8a97fa7a",
+  "sourcify": "exact_match",
+  "sourcifyUrl": "https://sourcify.dev/server/v2/contract/177/0x8980296BAe193A359937ac873f8E6759C289646d",
+  "deployTx": "0x386afa2dba142422438d44f847c61c74a926812e4e67c8df19688736a7ca05f4",
+  "deployTxUrl": "https://hsk.blockscout.com/tx/0x386afa2dba142422438d44f847c61c74a926812e4e67c8df19688736a7ca05f4",
+  "deployBlock": 30455639,
+  "owner": "0x35D6cAbC30d0a1ee1B8d666DcC9944727a7145D2",
+  "agent": "0x8745a069574F6cD367d9877F04715617A77B7a6d",
+  "router": "0x2c16f75b95Cf1390c328aB70e2CEE7f4b80bD8F3",
+  "pool": "0x4ff515761864e7838B0AdB8b5b2B8B7A068905dC",
+  "quote": "0xf1b50ed67a9e2cc94ad3c477779e2d4cbfff9029",
+  "policy": {
+    "maxAmountIn0": "5000000000000000000",
+    "maxAmountIn1": "2000000",
+    "slippageBps": 100,
+    "cooldown": 60,
+    "dailyLossLimit": "5000000",
+    "maxBase": "50000000000000000000"
+  },
+  "wrapTx": "0x9fdbaa3e584344a31f1d2a92eb034a7c544f8d05dfa153ad16b6c609d9b06e95",
+  "wrapNote": "Owner wrapped 8 HSK into WHSK held by the vault.",
+  "decisions": [
+    {
+      "side": "sell",
+      "via": "desk chat in MODE=mainnet: 'sell 5', then 'approve'",
+      "amountIn": "5 WHSK",
+      "amountOut": "0.404297 USDT",
+      "tx": "0x3be3acda6b866ea83bb81c8cc533a45646af2fbaa737cbc704f9fd2667b9f702",
+      "txUrl": "https://hsk.blockscout.com/tx/0x3be3acda6b866ea83bb81c8cc533a45646af2fbaa737cbc704f9fd2667b9f702"
+    },
+    {
+      "side": "buy",
+      "via": "desk chat in MODE=mainnet: 'buy 0.3', then 'approve'",
+      "amountIn": "0.3 USDT",
+      "amountOut": "3.687908792473529432 WHSK",
+      "tx": "0x2d86b4e5a9f5e6090fc1a08827c33a965cf045208dab8b70ced2d84af3b3d26b",
+      "txUrl": "https://hsk.blockscout.com/tx/0x2d86b4e5a9f5e6090fc1a08827c33a965cf045208dab8b70ced2d84af3b3d26b"
+    }
+  ],
+  "refused": [
+    "'sell 6' then 'approve': the vault reverted Cap(6000000000000000000, 5000000000000000000) during gas estimation. Nothing was broadcast.",
+    "'buy 0.3' right after the sell: the vault reverted Cooldown(readyAt). Nothing was broadcast.",
+    "'max trade 3': refused by the desk, because 3 USDT is looser than the 2 USDT cap."
+  ],
+  "note": "HSK was about 0.081 USDT in the pool on 21 Nov 2026, so 5 WHSK is about 0.40 USDT. The trades are deliberately tiny."
+}
