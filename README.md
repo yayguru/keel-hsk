@@ -1,5 +1,7 @@
 # Keel
 
+**Demo video (2:16, recorded live on HSK mainnet):** https://youtu.be/Y8ZGB-Qex4M
+
 Keel is a Track A entry for the [HSK Chain Horizon Hackathon · Seoul](https://dorahacks.io/hackathon/hskchainseoul/detail). It is an autonomous trading agent for the WHSK/USDT pool on HSKSwap. With `auto on` it reads the pool and the APRO HSK/USD oracle on a timer, decides buy, sell or hold, and sends the swap itself. Nobody approves each trade. The only address that can swap is a vault, and the vault enforces the trade cap, the slippage floor, the cooldown, the inventory cap and the daily realized-loss stop. People keep the off switch: `auto off`, `pause`, and limits that can only get tighter.
 
 Submission closes 3 Dec 2026 04:00 UTC.

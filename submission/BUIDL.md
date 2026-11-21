@@ -29,7 +29,7 @@ AI Agent Trading
 - Earlier manual sell from the chat (propose, then approve), 5 WHSK for 0.404297 USDT: https://hsk.blockscout.com/tx/0x3be3acda6b866ea83bb81c8cc533a45646af2fbaa737cbc704f9fd2667b9f702
 - Earlier manual buy from the chat, 0.3 USDT for 3.6879 WHSK: https://hsk.blockscout.com/tx/0x2d86b4e5a9f5e6090fc1a08827c33a965cf045208dab8b70ced2d84af3b3d26b
 - Testnet rehearsal vault (chain id 133): https://testnet-explorer.hskchain.net/address/0x8414702dD9bd6C0938Be758E96cF1C6Ec7bF32B5
-- Demo video: paste the YouTube or Loom link
+- Demo video: https://youtu.be/Y8ZGB-Qex4M
 
 ## Description
 
@@ -111,7 +111,7 @@ Spot comes from `slot0`, not a TWAP, so a price pushed inside one block can move
 | Is this BUIDL open source | Yes |
 | GitHub | https://github.com/yayguru/keel-hsk |
 | Project website | leave empty, or the GitHub link |
-| Demo video | YouTube or Loom link to `demo/keel-demo.mp4` |
+| Demo video | https://youtu.be/Y8ZGB-Qex4M |
 | Description | the Description block above |
 | Smart contract / deployment | `0x8980296BAe193A359937ac873f8E6759C289646d` on HSK Chain mainnet, chain id 177 |
 | Team | your name, contact email, Telegram |
