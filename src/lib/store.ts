@@ -1,12 +1,16 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { activeChain, runtimeMode } from "./chains";
+import { freshAuto } from "./autopilot";
 import { freshDesk, type Desk, type Fill, type Proposal } from "./desk";
+import type { VaultSnapshot } from "./vault";
 import type { Book, Policy } from "./paper";
 
 const file = path.join(process.cwd(), "data", "desk.json");
 
-type JsonDesk = Omit<Desk, "book" | "policy" | "proposal" | "fills"> & {
+type JsonDesk = Omit<Desk, "book" | "policy" | "proposal" | "fills" | "vault" | "auto"> & {
+  auto?: Desk["auto"];
+  vault?: unknown;
   book: BookJson;
   policy: PolicyJson;
   proposal: ProposalJson | null;
@@ -54,8 +58,10 @@ export function resetMemory(): void {
 }
 
 function dehydrate(desk: Desk): JsonDesk {
+  const { vault: _vault, ...rest } = desk;
+  void _vault;
   return {
-    ...desk,
+    ...rest,
     book: {
       ...desk.book,
       quote: desk.book.quote.toString(),
@@ -79,8 +85,13 @@ function dehydrate(desk: Desk): JsonDesk {
 }
 
 function hydrate(value: JsonDesk): Desk {
+  const { vault: _vault, auto, ...rest } = value;
+  void _vault;
   return {
-    ...value,
+    ...rest,
+    // The loop never resumes by itself after a restart. A person turns it back on.
+    auto: { ...freshAuto(), ...(auto ?? {}), enabled: false },
+    vault: null as VaultSnapshot | null,
     book: {
       ...value.book,
       quote: BigInt(value.book.quote),

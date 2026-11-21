@@ -29,7 +29,7 @@
   "decisions": [
     {
       "side": "sell",
-      "via": "desk chat in MODE=mainnet: 'sell 5', then 'approve'",
+      "via": "desk chat in MODE=mainnet, manual: 'sell 5', then 'approve'",
       "amountIn": "5 WHSK",
       "amountOut": "0.404297 USDT",
       "tx": "0x3be3acda6b866ea83bb81c8cc533a45646af2fbaa737cbc704f9fd2667b9f702",
@@ -37,7 +37,7 @@
     },
     {
       "side": "buy",
-      "via": "desk chat in MODE=mainnet: 'buy 0.3', then 'approve'",
+      "via": "desk chat in MODE=mainnet, manual: 'buy 0.3', then 'approve'",
       "amountIn": "0.3 USDT",
       "amountOut": "3.687908792473529432 WHSK",
       "tx": "0x2d86b4e5a9f5e6090fc1a08827c33a965cf045208dab8b70ced2d84af3b3d26b",
@@ -49,5 +49,62 @@
     "'buy 0.3' right after the sell: the vault reverted Cooldown(readyAt). Nothing was broadcast.",
     "'max trade 3': refused by the desk, because 3 USDT is looser than the 2 USDT cap."
   ],
-  "note": "HSK was about 0.081 USDT in the pool on 21 Nov 2026, so 5 WHSK is about 0.40 USDT. The trades are deliberately tiny."
+  "note": "HSK was about 0.081 USDT in the pool on 21 Nov 2026, so 5 WHSK is about 0.40 USDT. The trades are deliberately tiny.",
+  "agentTopUp": {
+    "amount": "1 HSK",
+    "tx": "0x9fe1ef86426b260d8082d27134f267a0dc6e1f80b175da237d6b57e64a148f23"
+  },
+  "wrap2": {
+    "amount": "1.2 HSK",
+    "tx": "0xc2e02ce0fa0edfd4cdd7d6d77f2c7b6bf7bb1c0561230eaac5c15c067c667a80"
+  },
+  "autonomous": {
+    "setup": "MODE=mainnet, 'auto on 20', standard profile (60 bps band). No approve step. Pool 0.08110 vs APRO HSK/USD 0.08042 (about 13h old, inside the 24h heartbeat): 85 bps over, so the rule sold.",
+    "swaps": [
+      {
+        "amountIn": "5 WHSK",
+        "amountOut": "0.404297 USDT",
+        "gasUsed": 179842,
+        "tx": "0xb45adddf2c93bc020a27c65bb6d039102e8d77234d2283ba96a726f24449aa4a",
+        "txUrl": "https://hsk.blockscout.com/tx/0xb45adddf2c93bc020a27c65bb6d039102e8d77234d2283ba96a726f24449aa4a"
+      },
+      {
+        "amountIn": "1.6879 WHSK",
+        "amountOut": "0.136483 USDT",
+        "gasUsed": 178776,
+        "tx": "0x28cf10c5ad83b81a0a23d3263c24453d5b225969dd18fd4a077093de09c9f9ca",
+        "note": "The first attempt in this run was refused with Replay() before broadcast; fixed, see README.",
+        "txUrl": "https://hsk.blockscout.com/tx/0x28cf10c5ad83b81a0a23d3263c24453d5b225969dd18fd4a077093de09c9f9ca"
+      },
+      {
+        "amountIn": "1.2 WHSK",
+        "amountOut": "0.097031 USDT",
+        "gasUsed": 178752,
+        "tx": "0x7dbf7c2b78cb1e723e56a7cd0c63ac7e0302efd633a43979da6dac7eb6474d72",
+        "note": "Recorded in the demo video.",
+        "txUrl": "https://hsk.blockscout.com/tx/0x7dbf7c2b78cb1e723e56a7cd0c63ac7e0302efd633a43979da6dac7eb6474d72"
+      }
+    ],
+    "pause": [
+      "0x8000e177a19ea380b514a14e0dec747ac02b914762fd3c3e4fc214f2bd040e49",
+      "0x2a0356f85d513e58eb98e8295d176076223efc68bb40c5c33e3f132dfea027e6"
+    ],
+    "resume": [
+      "0x47120aa79b132feab0ee68fc23ad5c663d0ebaeb6484ae70f94da1739aeb34fd",
+      "0xa009caa8ef8d68b59c26a2df9ddae00917f6b0f37780605b80441dc7c1ce1838"
+    ],
+    "holdsLogged": [
+      "vault cooldown with time left",
+      "pool rich but no WHSK left to sell"
+    ],
+    "refusedWithoutTx": [
+      "'auto on' while the vault was paused",
+      "'max trade 3' (looser than the 2 USDT cap)"
+    ],
+    "gasSpentHSK": "about 0.38, including the agent top-up and the wrap",
+    "vaultAfter": {
+      "WHSK": "0",
+      "USDT": "0.742108"
+    }
+  }
 }

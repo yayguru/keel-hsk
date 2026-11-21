@@ -129,12 +129,19 @@ In the chat: `sell 5`, then `approve`. That is how the vault got its first USDT 
 
 `pause` and `max trade 1` in this mode are owner transactions. `max trade 3` is refused because 3 is looser than 2.
 
+## 4b. Autonomous mode
+
+With the same `.env`, type `auto on 60` in the chat. Every minute the agent reads the pool, the vault and APRO, decides, and sends the swap itself through the vault. `auto off` stops it. `pause` stops it and freezes the vault on chain. The loop turns itself off under 0.15 HSK of agent gas and after three failures in a row. Keep the agent topped up with about 1 HSK. Each swap costs about 0.09 HSK at 500 gwei.
+
+The run on 21 Nov 2026 used `auto on 20` and made three autonomous sells. They are listed in the README and in `contracts/deployments/177.json`.
+
 ## 5. Paste into the BUIDL
 
 - Title, one-liner, description, track, and stack: `submission/BUIDL.md`
 - Mainnet vault address: `0x8980296BAe193A359937ac873f8E6759C289646d`, https://hsk.blockscout.com/address/0x8980296BAe193A359937ac873f8E6759C289646d
 - The deploy transaction: https://hsk.blockscout.com/tx/0x386afa2dba142422438d44f847c61c74a926812e4e67c8df19688736a7ca05f4
-- The Decision swaps: https://hsk.blockscout.com/tx/0x3be3acda6b866ea83bb81c8cc533a45646af2fbaa737cbc704f9fd2667b9f702 and https://hsk.blockscout.com/tx/0x2d86b4e5a9f5e6090fc1a08827c33a965cf045208dab8b70ced2d84af3b3d26b
+- The autonomous swaps: https://hsk.blockscout.com/tx/0xb45adddf2c93bc020a27c65bb6d039102e8d77234d2283ba96a726f24449aa4a, https://hsk.blockscout.com/tx/0x28cf10c5ad83b81a0a23d3263c24453d5b225969dd18fd4a077093de09c9f9ca, https://hsk.blockscout.com/tx/0x7dbf7c2b78cb1e723e56a7cd0c63ac7e0302efd633a43979da6dac7eb6474d72
+- The manual Decision swaps: https://hsk.blockscout.com/tx/0x3be3acda6b866ea83bb81c8cc533a45646af2fbaa737cbc704f9fd2667b9f702 and https://hsk.blockscout.com/tx/0x2d86b4e5a9f5e6090fc1a08827c33a965cf045208dab8b70ced2d84af3b3d26b
 - Repository URL: https://github.com/yayguru/keel-hsk
 - Demo video, using `submission/DEMO_SCRIPT.md`
 

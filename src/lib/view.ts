@@ -1,4 +1,6 @@
 import { explorerAddress, explorerTx } from "./chains";
+import { autoText } from "./desk";
+import { thresholdsFor } from "./strategy";
 import type { Desk } from "./desk";
 import { formatRaw } from "./units";
 
@@ -10,6 +12,19 @@ export type DeskView = {
   poolUrl: string;
   routerUrl: string;
   paused: boolean;
+  auto: {
+    enabled: boolean;
+    stopped: boolean;
+    label: string;
+    detail: string;
+    profile: string;
+    bandBps: number;
+    intervalSec: number;
+    nextInSec: number | null;
+    ticks: number;
+    trades: number;
+  };
+  agentGas: string | null;
   quote: string;
   base: string;
   realized: string;
@@ -26,7 +41,7 @@ export type DeskView = {
   messages: { id: string; role: "user" | "agent"; text: string }[];
 };
 
-export function toView(desk: Desk): DeskView {
+export function toView(desk: Desk, now: number): DeskView {
   const chain = desk.chain;
   const price = desk.book.prices.at(-1) ?? null;
   const baseHuman = Number(formatRaw(desk.book.base, chain.baseDecimals, 8));
@@ -40,6 +55,19 @@ export function toView(desk: Desk): DeskView {
     poolUrl: explorerAddress(chain, chain.pool),
     routerUrl: explorerAddress(chain, chain.router),
     paused: desk.policy.paused,
+    auto: {
+      enabled: desk.auto.enabled,
+      stopped: !desk.auto.enabled && desk.auto.stoppedReason !== null,
+      label: desk.auto.enabled ? "Auto on" : desk.auto.stoppedReason ? "Auto stopped" : "Auto off",
+      detail: autoText(desk, now),
+      profile: desk.auto.profile,
+      bandBps: thresholdsFor(desk.auto.profile).bandBps,
+      intervalSec: desk.auto.intervalSec,
+      nextInSec: desk.auto.enabled ? Math.max(0, desk.auto.nextTickAt - now) : null,
+      ticks: desk.auto.ticks,
+      trades: desk.auto.trades,
+    },
+    agentGas: desk.vault ? `${formatRaw(desk.vault.agentGas, 18)} HSK` : null,
     quote: raw(desk.book.quote, chain.quoteDecimals, chain.quoteSymbol),
     base: raw(desk.book.base, chain.baseDecimals, chain.baseSymbol),
     realized: raw(desk.book.realized, chain.quoteDecimals, chain.quoteSymbol),

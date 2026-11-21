@@ -12,6 +12,7 @@ export type Intent =
   | { type: "reject" }
   | { type: "tighten"; maxQuote?: string; dailyLoss?: string; slippagePct?: string; cooldownSec?: number }
   | { type: "order"; side: "buy" | "sell"; amount: string }
+  | { type: "auto"; action: "on" | "off" | "status" | "demo" | "standard"; intervalSec?: number }
   | { type: "unknown"; text: string };
 
 export function parseIntent(raw: string): Intent {
@@ -27,6 +28,12 @@ export function parseIntent(raw: string): Intent {
   if (/^(pause|kill|stop trading|kill switch)$/.test(text)) return { type: "pause" };
   if (/^(resume|unpause|start)$/.test(text)) return { type: "resume" };
   if (/^(approve|yes|do it|confirm)$/.test(text)) return { type: "approve" };
+
+  const auto = text.match(/^(?:auto|autopilot)(?: (on|off|status|demo|standard))?(?: (?:every )?([0-9]+)s?)?$/);
+  if (auto) {
+    const action = (auto[1] ?? (auto[2] ? "on" : "status")) as "on" | "off" | "status" | "demo" | "standard";
+    return auto[2] ? { type: "auto", action, intervalSec: Number(auto[2]) } : { type: "auto", action };
+  }
   if (/^(reject|no|skip|cancel)$/.test(text)) return { type: "reject" };
 
   const buy = text.match(/^buy ([0-9]*\.?[0-9]+)(?: usdt)?$/);

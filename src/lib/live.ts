@@ -3,6 +3,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import type { ChainConfig } from "./chains";
 import type { Proposal } from "./desk";
 import type { Policy } from "./paper";
+import type { ExecResult, VaultSnapshot } from "./vault";
 import { slippageFloor, spotOut } from "./units";
 
 const vaultAbi = parseAbi([
@@ -10,6 +11,7 @@ const vaultAbi = parseAbi([
   "function setPaused(bool next)",
   "function tighten((bool hasMax0, uint256 maxAmountIn0, bool hasMax1, uint256 maxAmountIn1, bool hasSlippage, uint16 slippageBps, bool hasCooldown, uint32 cooldown, bool hasDaily, uint256 dailyLossLimit, bool hasMaxBase, uint256 maxBase) patch)",
   "function token0() view returns (address)",
+  "function risk() view returns (bool paused, uint32 dayId, uint256 dayRealizedLoss, uint256 baseQty, uint256 quoteCost, uint256 cooldownRemaining, uint256 quoteBalance, uint256 baseBalance, (uint256 maxAmountIn0, uint256 maxAmountIn1, uint16 slippageBps, uint32 cooldown, uint256 dailyLossLimit, uint256 maxBase) policy)",
   "error NotOwner()",
   "error NotAgent()",
   "error PausedError()",
@@ -27,17 +29,34 @@ const vaultAbi = parseAbi([
   "event Decision(bytes32 indexed decisionId, address indexed tokenIn, address tokenOut, uint256 amountIn, uint256 amountOutMin, uint256 amountOut, uint256 dayRealizedLoss, uint256 baseQty, uint256 quoteCost, bool stopOut, bytes reason)",
 ]);
 
-/** Names the vault rule that refused the call. Viem runs eth_estimateGas first, so a refusal costs no gas. */
-function explain(error: unknown, fallback: string): string {
+/** Names the vault rule that refused the call. The call is simulated first, so a refusal costs no gas. */
+function explain(error: unknown, fallback: string): { error: string; rule?: string } {
   if (error instanceof BaseError) {
     const revert = error.walk((e) => e instanceof ContractFunctionRevertedError);
     if (revert instanceof ContractFunctionRevertedError && revert.data?.errorName) {
       const args = (revert.data.args ?? []).map((a) => String(a)).join(", ");
-      return `The vault refused it: ${revert.data.errorName}(${args}). Nothing was sent.`;
+      return { error: `The vault refused it: ${revert.data.errorName}(${args}). Nothing was sent.`, rule: revert.data.errorName };
     }
-    return error.shortMessage;
+    return { error: error.shortMessage };
   }
-  return error instanceof Error ? error.message : fallback;
+  return { error: error instanceof Error ? error.message : fallback };
+}
+
+/**
+ * The vault refuses a decision id it has seen (Replay). Desk ids restart at k1 when the book is reset,
+ * so the id is bound to the vault, the proposal id, and the proposal's expiry second.
+ */
+export function decisionIdFor(vault: `0x${string}`, proposal: Pick<Proposal, "id" | "expiresAt">): `0x${string}` {
+  return keccak256(toBytes(`${vault.toLowerCase()}:${proposal.id}:${proposal.expiresAt}`));
+}
+
+/** The vault caps the reason at 180 bytes. Keep whole sentences so the explorer shows a readable reason. */
+export function onChainReason(text: string, maxBytes = 170): string {
+  const ascii = text.replace(/[^\x20-\x7e]/g, "");
+  if (ascii.length <= maxBytes) return ascii;
+  const cut = ascii.slice(0, maxBytes);
+  const end = cut.lastIndexOf(". ");
+  return end > 40 ? cut.slice(0, end + 1) : cut;
 }
 
 function accountFrom(name: "AGENT_PRIVATE_KEY" | "OWNER_PRIVATE_KEY") {
@@ -60,7 +79,7 @@ export function vaultAddress(): `0x${string}` | null {
   return value ? (value as `0x${string}`) : null;
 }
 
-export async function executeProposal(config: ChainConfig, proposal: Proposal): Promise<{ txHash: `0x${string}`; amountOut: bigint } | { error: string }> {
+export async function executeProposal(config: ChainConfig, proposal: Proposal): Promise<ExecResult> {
   const vault = vaultAddress();
   const account = accountFrom("AGENT_PRIVATE_KEY");
   if (!vault || !account) return { error: "On-chain execution needs VAULT_ADDRESS and AGENT_PRIVATE_KEY." };
@@ -68,19 +87,27 @@ export async function executeProposal(config: ChainConfig, proposal: Proposal): 
   const spot = spotOut(proposal.amountIn, proposal.zeroForOne, proposal.sqrtPriceX96, proposal.fee);
   const amountOutMin = slippageFloor(spot, proposal.slippageBps);
   if (amountOutMin === 0n) return { error: "Spot floor rounded to zero." };
-  const reason = stringToHex(proposal.reason.slice(0, 160));
-  const decisionId = keccak256(toBytes(proposal.id));
+  const reason = stringToHex(onChainReason(proposal.reason));
+  const decisionId = decisionIdFor(vault, proposal);
+  const publicClient = createPublicClient({ chain: chainOf(config), transport: http(config.rpc) });
+  const wallet = createWalletClient({ account, chain: chainOf(config), transport: http(config.rpc) });
+  let request;
   try {
-    const wallet = createWalletClient({ account, chain: chainOf(config), transport: http(config.rpc) });
-    const publicClient = createPublicClient({ chain: chainOf(config), transport: http(config.rpc) });
-    const hash = await wallet.writeContract({
+    // eth_call first. A cap, cooldown, slippage or daily-loss refusal stops here and costs nothing.
+    ({ request } = await publicClient.simulateContract({
+      account,
       address: vault,
       abi: vaultAbi,
       functionName: "swap",
       args: [tokenIn, proposal.amountIn, amountOutMin, BigInt(proposal.expiresAt), decisionId, proposal.stop, reason],
-    });
+    }));
+  } catch (error) {
+    return explain(error, "Simulation failed.");
+  }
+  try {
+    const hash = await wallet.writeContract(request);
     const receipt = await publicClient.waitForTransactionReceipt({ hash });
-    if (receipt.status !== "success") return { error: `Swap reverted. Tx ${hash}.` };
+    if (receipt.status !== "success") return { error: `Swap reverted. Tx ${hash}.`, rule: "Reverted" };
     let amountOut = 0n;
     for (const log of receipt.logs) {
       if (log.address.toLowerCase() !== vault.toLowerCase()) continue;
@@ -93,8 +120,40 @@ export async function executeProposal(config: ChainConfig, proposal: Proposal): 
     }
     return { txHash: hash, amountOut };
   } catch (error) {
-    return { error: explain(error, "Swap failed.") };
+    return explain(error, "Swap failed.");
   }
+}
+
+/** Vault balances, cost basis, limits and cooldown, plus the agent's HSK for gas. */
+export async function readVault(config: ChainConfig): Promise<VaultSnapshot> {
+  const vault = vaultAddress();
+  const account = accountFrom("AGENT_PRIVATE_KEY");
+  if (!vault || !account) throw new Error("Reading the vault needs VAULT_ADDRESS and AGENT_PRIVATE_KEY.");
+  const publicClient = createPublicClient({ chain: chainOf(config), transport: http(config.rpc) });
+  const [risk, agentGas] = await Promise.all([
+    publicClient.readContract({ address: vault, abi: vaultAbi, functionName: "risk" }),
+    publicClient.getBalance({ address: account.address }),
+  ]);
+  const [paused, , dayLoss, trackedBase, trackedCost, cooldownRemaining, quoteBalance, baseBalance, p] = risk;
+  const baseOn0 = config.token0IsBase;
+  return {
+    paused,
+    dayLoss,
+    trackedBase,
+    trackedCost,
+    cooldownRemaining: Number(cooldownRemaining),
+    quoteBalance,
+    baseBalance,
+    agentGas,
+    policy: {
+      maxBaseIn: baseOn0 ? p.maxAmountIn0 : p.maxAmountIn1,
+      maxQuoteIn: baseOn0 ? p.maxAmountIn1 : p.maxAmountIn0,
+      slippageBps: p.slippageBps,
+      cooldownSec: p.cooldown,
+      dailyLoss: p.dailyLossLimit,
+      maxBase: p.maxBase,
+    },
+  };
 }
 
 export async function tightenVault(config: ChainConfig, before: Policy, after: Policy): Promise<{ txHash: `0x${string}` } | { error: string }> {
@@ -142,7 +201,7 @@ export async function tightenVault(config: ChainConfig, before: Policy, after: P
     if (receipt.status !== "success") return { error: `Tighten reverted. Tx ${hash}.` };
     return { txHash: hash };
   } catch (error) {
-    return { error: explain(error, "Tighten failed.") };
+    return explain(error, "Tighten failed.");
   }
 }
 
@@ -158,6 +217,6 @@ export async function pauseVault(config: ChainConfig, paused: boolean): Promise<
     if (receipt.status !== "success") return { error: `Pause reverted. Tx ${hash}.` };
     return { txHash: hash };
   } catch (error) {
-    return { error: explain(error, "Pause failed.") };
+    return explain(error, "Pause failed.");
   }
 }

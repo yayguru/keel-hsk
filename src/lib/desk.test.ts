@@ -4,7 +4,6 @@ import { CHAINS } from "./chains";
 import { freshDesk, handleMessage } from "./desk";
 import { applySwap } from "./paper";
 import { parseIntent } from "./parse";
-import { decide } from "./strategy";
 import { humanQuotePerBase, spotOut } from "./units";
 
 const now = 1_700_000_000;
@@ -24,30 +23,6 @@ test("parser keeps the desk commands and ignores prose", () => {
   assert.equal(parseIntent("max trade 1").type, "tighten");
   assert.deepEqual(parseIntent("buy 2"), { type: "order", side: "buy", amount: "2" });
   assert.equal(parseIntent("please be profitable").type, "unknown");
-});
-
-test("entry fires 50 bps under the recent mean and a stop does not wait", () => {
-  const buy = decide({
-    prices: [0.083, 0.0825, 0.0828, 0.0831, 0.08],
-    oraclePrice: null,
-    oracleAgeSec: null,
-    base: 0n,
-    entryPrice: null,
-    entryAt: null,
-    now,
-  });
-  assert.equal(buy.action, "buy");
-  const stop = decide({
-    prices: [0.08, 0.08, 0.08, 0.08, 0.0785],
-    oraclePrice: null,
-    oracleAgeSec: null,
-    base: 1n,
-    entryPrice: 0.08,
-    entryAt: now,
-    now,
-  });
-  assert.equal(stop.action, "sell");
-  if (stop.action === "sell") assert.equal(stop.stop, true);
 });
 
 test("a losing sell blocks the next buy and still allows the sell", () => {
@@ -93,4 +68,19 @@ test("tighten cannot raise the max trade", async () => {
   const desk = freshDesk(CHAINS.mainnet, now);
   await handleMessage(desk, "max trade 50", now, null, {});
   assert.match(desk.messages.at(-1)?.text ?? "", /only be tightened/);
+});
+
+test("decision ids differ across desk restarts that reuse a proposal id", async () => {
+  const { decisionIdFor } = await import("./live");
+  const vault = "0x8980296BAe193A359937ac873f8E6759C289646d";
+  assert.notEqual(decisionIdFor(vault, { id: "k5", expiresAt: 1 }), decisionIdFor(vault, { id: "k5", expiresAt: 2 }));
+  assert.equal(decisionIdFor(vault, { id: "k5", expiresAt: 1 }), decisionIdFor(vault.toLowerCase() as `0x${string}`, { id: "k5", expiresAt: 1 }));
+});
+
+test("the on-chain reason keeps whole sentences under the vault limit", async () => {
+  const { onChainReason } = await import("./live");
+  const long = "auto: Pool 0.08110 is 85 bps over APRO HSK/USD 0.08042 (printed 13.0h ago). Band 60 bps. The pool is rich, so sell WHSK into it. No model key is set, so this note is the rule itself.";
+  const out = onChainReason(long);
+  assert.ok(out.length <= 170);
+  assert.ok(out.endsWith("sell WHSK into it."));
 });

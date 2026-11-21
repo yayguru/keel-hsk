@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start -p 4317 -H 0.0.0.0",
     "lint": "eslint",
-    "test": "tsx --test src/lib/desk.test.ts",
+    "test": "tsx --test src/lib/desk.test.ts src/lib/auto.test.ts",
     "dry-run": "tsx scripts/dry-run.ts",
     "testnet-swap": "tsx scripts/testnet-swap.ts",
     "typecheck": "tsc --noEmit"

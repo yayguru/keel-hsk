@@ -8,7 +8,8 @@ import { Separator } from "@/components/ui/separator";
 import type { DeskView } from "@/lib/view";
 import { useEffect, useRef, useState } from "react";
 
-const PROMPTS = ["check the pool", "worked example", "status", "risk", "max trade 1"];
+const PROMPTS = ["auto on", "auto off", "status", "check the pool", "pause", "resume", "max trade 1"];
+const POLL_MS = 3_000;
 
 export default function HomePage() {
   const [desk, setDesk] = useState<DeskView | null>(null);
@@ -30,8 +31,17 @@ export default function HomePage() {
       .catch((cause: unknown) => {
         if (!cancelled) setError(cause instanceof Error ? cause.message : "Could not load the desk.");
       });
+    const timer = setInterval(() => {
+      fetch("/api/desk")
+        .then(async (response) => (response.ok ? ((await response.json()) as DeskView) : null))
+        .then((view) => {
+          if (!cancelled && view) setDesk(view);
+        })
+        .catch(() => undefined);
+    }, POLL_MS);
     return () => {
       cancelled = true;
+      clearInterval(timer);
     };
   }, []);
 
@@ -79,6 +89,10 @@ export default function HomePage() {
               <Badge variant="outline">{desk.mode === "paper" ? "Paper" : desk.mode === "testnet" ? "Testnet" : "Mainnet"}</Badge>
               <Badge variant="outline">Chain {desk.chainId}</Badge>
               <Badge variant={desk.paused ? "destructive" : "secondary"}>{desk.paused ? "Paused" : "Open"}</Badge>
+              <Badge variant={desk.auto.enabled ? "default" : desk.auto.stopped ? "destructive" : "outline"} aria-live="polite">
+                {desk.auto.label}
+                {desk.auto.nextInSec !== null ? ` · next ${desk.auto.nextInSec}s` : ""}
+              </Badge>
             </>
           ) : null}
         </div>
@@ -89,8 +103,13 @@ export default function HomePage() {
             Talk to the agent
           </h2>
           <p className="mt-1 max-w-prose text-sm text-muted-foreground">
-            It reads the {desk?.pair ?? "WHSK/USDT 0.30%"} pool, explains the rule, and waits for approve. The vault is the only thing that can swap.
+            It watches the {desk?.pair ?? "WHSK/USDT 0.30%"} pool against APRO HSK/USD. With auto on it trades by itself and explains every decision. The vault is the only thing that can swap, and it enforces the limits.
           </p>
+          {desk ? (
+            <p className={`mt-2 rounded-md border px-3 py-2 text-sm ${desk.auto.enabled ? "border-primary" : ""}`} role="status">
+              {desk.auto.detail}
+            </p>
+          ) : null}
           {error ? (
             <Alert variant="destructive" className="mt-3">
               <AlertTitle>Desk error</AlertTitle>
@@ -153,6 +172,10 @@ export default function HomePage() {
           <h2 className="text-sm font-medium">Book</h2>
           {desk ? (
             <dl className="mt-3 grid grid-cols-[8rem_minmax(0,1fr)] gap-y-2 text-sm tabular-nums">
+              <Row label="Autonomy" value={desk.auto.enabled ? `on, every ${desk.auto.intervalSec}s` : desk.auto.label.replace("Auto ", "")} />
+              <Row label="Strategy" value={`${desk.auto.profile}, ${desk.auto.bandBps} bps band`} />
+              <Row label="Decisions" value={`${desk.auto.ticks} (${desk.auto.trades} trades)`} />
+              {desk.agentGas ? <Row label="Agent gas" value={desk.agentGas} /> : null}
               <Row label="Pool" value={desk.price} />
               <Row label="Quote" value={desk.quote} />
               <Row label="Base" value={desk.base} />
