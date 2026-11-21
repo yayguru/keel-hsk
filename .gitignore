@@ -50,3 +50,6 @@ contracts/foundry.lock
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# demo recording, uploaded separately
+/demo/*.mp4
